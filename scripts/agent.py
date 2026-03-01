@@ -99,7 +99,7 @@ Generate 3 LinkedIn post prompts for a Tech4Dev executive to post this week.
 Mix themes: one about impact/mission, one about team/culture, one about personal reflection on the tech-for-development journey."""
 
     payload = {
-        "model": "llama3-8b-8192",  # Free model on Groq
+        "model": "llama-3.1-8b-instant",  # Free model on Groq
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user",   "content": user_message}
