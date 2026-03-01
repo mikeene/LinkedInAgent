@@ -172,7 +172,7 @@ def send_email(prompts: str, posts: list[dict]) -> None:
     }
 
     response = requests.post(
-        "https://api.sendgrid.com/v3/mail/send",
+        "https://api.resend.com/emails",
         json=payload,
         headers=headers,
         timeout=30
