@@ -2,11 +2,10 @@ name: Tech4Dev LinkedIn Post Agent
 
 on:
   schedule:
-    # Runs Mon, Wed, Fri at 7:00 AM WAT (6:00 AM UTC)
     - cron: "0 6 * * 1"   # Monday
     - cron: "0 6 * * 3"   # Wednesday
     - cron: "0 6 * * 5"   # Friday
-  workflow_dispatch:       # Allow manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   run-agent:
@@ -23,15 +22,13 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run LinkedIn Post Agent
         env:
-          GROQ_API_KEY:      ${{ secrets.GROQ_API_KEY }}
-          SENDER_EMAIL:      ${{ secrets.SENDER_EMAIL }}
-          SENDER_PASSWORD:   ${{ secrets.SENDER_PASSWORD }}
-          RECIPIENT_EMAIL:   ${{ secrets.RECIPIENT_EMAIL }}
-          LINKEDIN_COMPANY:  tech4dev
-        run: |
-          python scripts/agent.py
+          GROQ_API_KEY:     ${{ secrets.GROQ_API_KEY }}
+          RESEND_API_KEY:   ${{ secrets.RESEND_API_KEY }}
+          SENDER_EMAIL:     ${{ secrets.SENDER_EMAIL }}
+          RECIPIENT_EMAIL:  ${{ secrets.RECIPIENT_EMAIL }}
+          LINKEDIN_COMPANY: tech4dev
+        run: python scripts/agent.py
