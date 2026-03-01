@@ -195,9 +195,10 @@ def send_email(prompts: str, posts: list[dict]) -> None:
     msg["To"]      = RECIPIENT_EMAIL
     msg.attach(MIMEText(html_body, "html"))
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, msg.as_string())
+    with smtplib.SMTP("smtp.sendgrid.net", 587) as server:
+    server.starttls()
+    server.login("apikey", SENDER_PASSWORD)
+    server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, msg.as_string())
 
     print(f"✅ Email sent to {RECIPIENT_EMAIL}")
 
