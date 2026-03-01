@@ -2,9 +2,9 @@ name: Tech4Dev LinkedIn Post Agent
 
 on:
   schedule:
-    - cron: "0 6 * * 1"   # Monday
-    - cron: "0 6 * * 3"   # Wednesday
-    - cron: "0 6 * * 5"   # Friday
+    - cron: "0 6 * * 1"
+    - cron: "0 6 * * 3"
+    - cron: "0 6 * * 5"
   workflow_dispatch:
 
 jobs:
