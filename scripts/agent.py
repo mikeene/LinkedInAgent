@@ -129,7 +129,6 @@ def send_email(prompts: str, posts: list[dict]) -> None:
     today = datetime.now().strftime("%A, %B %d %Y")
     subject = f"📝 Your LinkedIn Post Prompts for {today} | Tech4Dev"
 
-    # Build HTML email
     posts_preview = "".join(
         f"<li style='margin-bottom:8px;color:#555'>{p['text'][:150]}...</li>"
         for p in posts[:3]
@@ -140,67 +139,50 @@ def send_email(prompts: str, posts: list[dict]) -> None:
     html_body = f"""
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:680px;margin:auto;padding:20px;color:#333">
-
   <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);padding:30px;border-radius:12px;margin-bottom:24px">
     <h1 style="color:#e94560;margin:0;font-size:22px">Tech4Dev LinkedIn Agent</h1>
     <p style="color:#aaa;margin:8px 0 0">Executive Post Prompts · {today}</p>
   </div>
-
-  <div style="background:#f9f9f9;border-left:4px solid #e94560;padding:16px;border-radius:6px;margin-bottom:24px">
-    <p style="margin:0;font-size:14px;color:#666">
-      🔍 <strong>Based on recent Tech4Dev content</strong> — here are 3 post prompts crafted for you.
-      Personalize them with your own stories and voice before posting.
-    </p>
-  </div>
-
-  <!-- POST PROMPTS -->
   <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:24px;margin-bottom:24px">
     <h2 style="color:#1a1a2e;font-size:18px;margin-top:0">✍️ Your 3 Post Prompts This Week</h2>
-    <div style="font-size:15px;line-height:1.7;color:#333">
-      {prompts_html}
-    </div>
+    <div style="font-size:15px;line-height:1.7;color:#333">{prompts_html}</div>
   </div>
-
-  <!-- SOURCE CONTENT PREVIEW -->
   <div style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:24px;margin-bottom:24px">
     <h2 style="color:#1a1a2e;font-size:16px;margin-top:0">📌 Source: Recent Tech4Dev Activity</h2>
-    <ul style="font-size:13px;padding-left:18px">
-      {posts_preview}
-    </ul>
+    <ul style="font-size:13px;padding-left:18px">{posts_preview}</ul>
   </div>
-
-  <!-- TIPS -->
-  <div style="background:#fff8e1;border-radius:8px;padding:16px;font-size:13px;color:#555">
-    <strong>💡 Tips for posting:</strong><br>
-    • Add a personal story or memory to make it yours<br>
-    • Post Tuesday–Thursday for best LinkedIn engagement<br>
-    • End with a question to spark comments<br>
-    • Use 3–5 relevant hashtags (#Tech4Dev #DigitalInclusion #AfricaTech)
-  </div>
-
   <p style="text-align:center;font-size:12px;color:#999;margin-top:24px">
-    Sent automatically by your Tech4Dev LinkedIn Agent · 3x/week<br>
-    Powered by Groq LLaMA 3 + GitHub Actions
+    Sent automatically by your Tech4Dev LinkedIn Agent · 3x/week
   </p>
-
 </body>
 </html>
 """
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"]    = SENDER_EMAIL
-    msg["To"]      = RECIPIENT_EMAIL
-    msg.attach(MIMEText(html_body, "html"))
+    payload = {
+        "personalizations": [{"to": [{"email": RECIPIENT_EMAIL}]}],
+        "from": {"email": SENDER_EMAIL},
+        "subject": subject,
+        "content": [{"type": "text/html", "value": html_body}]
+    }
 
-with smtplib.SMTP("smtp.sendgrid.net", 587) as server:
-    server.starttls()
-    server.login("apikey", SENDER_PASSWORD)
-    server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, msg.as_string())
+    headers = {
+        "Authorization": f"Bearer {SENDER_PASSWORD}",
+        "Content-Type": "application/json"
+    }
 
-    print(f"✅ Email sent to {RECIPIENT_EMAIL}")
+    response = requests.post(
+        "https://api.sendgrid.com/v3/mail/send",
+        json=payload,
+        headers=headers,
+        timeout=30
+    )
+
+    if response.status_code == 202:
+        print(f"✅ Email sent to {RECIPIENT_EMAIL}")
+    else:
+        print(f"❌ SendGrid error: {response.status_code} - {response.text}")
+        response.raise_for_status()
 
 
 # ── Main ───────────────────────────────────────────────────────────────────
