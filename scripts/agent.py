@@ -170,6 +170,9 @@ def send_email(prompts, posts):
 </html>
 """
 
+    print(f"DEBUG sender: '{SENDER_EMAIL}'")
+    print(f"DEBUG recipient: '{RECIPIENT_EMAIL}'")
+
     payload = {
         "from": SENDER_EMAIL,
         "to": [RECIPIENT_EMAIL],
