@@ -7,7 +7,6 @@ Tech4Dev LinkedIn Executive Post Agent v2
 
 import os
 import json
-import time
 import requests
 from datetime import datetime
 
@@ -20,64 +19,32 @@ APIFY_API_TOKEN = os.environ["APIFY_API_TOKEN"]
 
 TECH4DEV_LINKEDIN_URL = "https://www.linkedin.com/company/tech4dev/"
 
-# Apify actor ID for LinkedIn Company Posts scraper
-APIFY_ACTOR_ID = "2SyF0bVxmgGr8IVCZ"
+# Correct actor slug for HarvestAPI's LinkedIn Company Posts scraper (no cookies)
+# https://apify.com/harvestapi/linkedin-company-posts
+APIFY_ACTOR_SLUG = "harvestapi~linkedin-company-posts"
 
 
 # ── Step 1: Scrape Tech4Dev LinkedIn posts via Apify ──────────────────────
 def scrape_linkedin_posts() -> list[dict]:
     """
-    Uses Apify's LinkedIn Company Posts scraper actor.
-    This works because Apify uses residential proxies that bypass
-    LinkedIn's bot detection — unlike a plain requests.get() which
-    always gets blocked and returns a login wall.
+    Uses Apify's LinkedIn Company Posts scraper (harvestapi~linkedin-company-posts).
+    Uses the synchronous endpoint — sends request, waits, gets results back directly.
+    No polling loop needed. Timeout set to 5 minutes to give Apify enough time.
     """
     print("🔍 Starting Apify LinkedIn scrape for Tech4Dev...")
 
-    # ── 1a. Start the Apify actor run ──────────────────────────────────────
-    run_response = requests.post(
-        f"https://api.apify.com/v2/acts/{APIFY_ACTOR_ID}/runs",
+    # Single synchronous call: runs the actor AND returns dataset items directly
+    response = requests.post(
+        f"https://api.apify.com/v2/acts/{APIFY_ACTOR_SLUG}/run-sync-get-dataset-items",
         params={"token": APIFY_API_TOKEN},
         json={
-            "startUrls": [{"url": TECH4DEV_LINKEDIN_URL}],
+            "companyUrls": [TECH4DEV_LINKEDIN_URL],   # correct input field for this actor
             "maxPosts": 8,
-            "proxy": {
-                "useApifyProxy": True,
-                "apifyProxyGroups": ["RESIDENTIAL"]
-            }
         },
-        timeout=30,
+        timeout=300,   # 5 minutes — Apify scrape typically takes 1–3 min
     )
-    run_response.raise_for_status()
-    run_data      = run_response.json()["data"]
-    run_id        = run_data["id"]
-    dataset_id    = run_data["defaultDatasetId"]
-    print(f"   Apify run started → Run ID: {run_id}")
-
-    # ── 1b. Poll until the run finishes (max 4 minutes) ────────────────────
-    status_url = f"https://api.apify.com/v2/actor-runs/{run_id}"
-    for attempt in range(48):          # 48 × 5 s = 4 minutes max
-        time.sleep(5)
-        status_resp = requests.get(
-            status_url, params={"token": APIFY_API_TOKEN}, timeout=15
-        )
-        status = status_resp.json()["data"]["status"]
-        print(f"   [{attempt+1}/48] Status: {status}")
-        if status == "SUCCEEDED":
-            break
-        if status in ("FAILED", "ABORTED", "TIMED-OUT"):
-            raise RuntimeError(f"Apify actor failed: {status}")
-    else:
-        raise RuntimeError("Apify timed out after 4 minutes.")
-
-    # ── 1c. Fetch results ──────────────────────────────────────────────────
-    items_resp = requests.get(
-        f"https://api.apify.com/v2/datasets/{dataset_id}/items",
-        params={"token": APIFY_API_TOKEN, "format": "json", "clean": "true"},
-        timeout=30,
-    )
-    items_resp.raise_for_status()
-    items = items_resp.json()
+    response.raise_for_status()
+    items = response.json()
     print(f"✅ Apify returned {len(items)} raw items.")
 
     # ── 1d. Normalise into clean post dicts ───────────────────────────────
