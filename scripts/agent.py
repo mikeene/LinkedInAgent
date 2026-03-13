@@ -56,12 +56,22 @@ def scrape_linkedin_posts() -> list[dict]:
         ).strip()
         if len(text) < 60:
             continue
+        # Safely handle fields that Apify may return as dicts instead of plain values
+        raw_date = item.get("date") or item.get("postedAt") or ""
+        if isinstance(raw_date, dict):
+            raw_date = raw_date.get("date") or raw_date.get("text") or ""
+
+        def _to_int(v):
+            if isinstance(v, dict): v = v.get("count") or v.get("total") or 0
+            try: return int(v or 0)
+            except: return 0
+
         posts.append({
             "text":     text[:1500],
-            "url":      item.get("url") or item.get("postUrl") or "",
-            "date":     item.get("date") or item.get("postedAt") or "",
-            "likes":    item.get("likes") or item.get("likesCount") or 0,
-            "comments": item.get("comments") or item.get("commentsCount") or 0,
+            "url":      str(item.get("url") or item.get("postUrl") or ""),
+            "date":     str(raw_date)[:40],
+            "likes":    _to_int(item.get("likes") or item.get("likesCount") or 0),
+            "comments": _to_int(item.get("comments") or item.get("commentsCount") or 0),
             "source":   "apify_live",
         })
 
